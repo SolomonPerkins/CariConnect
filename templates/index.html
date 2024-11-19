@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="referrer" content="no-referrer">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+  
+</head>
+
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div>
+      <img src="{{ url_for('static', filename='caricon.png') }}" alt="Logo" class="logo">
+    </div>
+    <ul>
+      <li><a href="#who-we-are">Who We Are</a></li>
+      <li><a href="#landing-page">TRY OUR PRODUCT</a></li>
+    </ul>
+  </nav>
+
+  <!-- Main content -->
+  <div class="content">
+
+    <!-- Who We Are Section -->
+    <section id="who-we-are">      
+      <h2>Who We Are</h2>
+      <p>
+        Hello Writers, this AI tool is to help you find the best recommendations for related publishers based on your title, subjects, and synopsis.
+        Our system leverages advanced AI Models to deliver the most relevant suggestions tailored just for you. 
+        All delivered in One-Click!
+      </p>
+    </section>
+
+    <section id="landing-page">
+      <h1>RECOMMEND ME!</h1>
+      <div class="form-results-container">
+        <form>
+          <label for="title">Title:</label>
+          <input type="text" id="title" name="title">
+
+          <label for="subjects">Subjects:</label>
+          <input type="text" id="subjects" name="subjects">
+
+          <label for="synopsis">Synopsis:</label>
+          <textarea id="synopsis" name="synopsis"></textarea>
+
+          <div>
+            <button id="submitButton" type="button">RECOMMEND</button>
+            <button id="resetButton" type="button">RESET</button>
+          </div>
+        </form>
+
+
+        <!-- Results -->
+        <div id="results" style="display: none;">
+          <p><strong>RECOMMENDATIONS</strong></p>
+        </div>
+      </div>
+    </section>
+  </div>
+  <footer>
+    <p>© 2024 Copyrights. All rights reserved.</p>
+    <div class="social-icons">
+      <a href="https://x.com/CariConLA" target="_blank" title="Twitter">
+        <i class="fab fa-twitter"></i>
+      </a>
+      <a href="https://www.facebook.com/CariConLA/" target="_blank" title="Facebook">
+        <i class="fab fa-facebook-f"></i>
+      <a href="https://www.instagram.com/cariconla/" target="_blank" title="Instagram">
+        <i class="fab fa-instagram"></i>
+      </a>
+    </div>
+  </footer>
+  
+  
+  <!-- Reference JavaScript in the static folder -->
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+
+</html>

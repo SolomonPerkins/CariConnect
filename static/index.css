@@ -1,0 +1,185 @@
+/* General styles */
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* Navbar styles */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background-color: #161442;
+  color: white;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 10;
+  box-sizing: border-box; /* Ensures padding doesn't overflow */
+}
+
+.navbar .logo {
+  height: 40px;
+}
+
+.navbar ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap; /* Ensures items wrap to the next line if needed */
+  gap: 15px; /* Adjust spacing between items */
+}
+
+.navbar ul li {
+  display: inline;
+}
+
+.navbar ul li a {
+  text-decoration: none;
+  color: white;
+  font-weight: 500;
+  padding: 10px 15px; /* Add padding for clickable area */
+  white-space: nowrap; /* Prevents text from breaking into multiple lines */
+}
+
+.navbar ul li a:hover {
+  text-decoration: underline;
+}
+
+/* Section styles */
+.content {
+  margin-top: 70px; /* Adjust for navbar height */
+}
+
+#landing-page,
+#who-we-are {
+  height: 100vh; /* Full viewport height */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+}
+
+#who-we-are {
+  background-color: #f9f9f9;
+}
+
+#who-we-are h2 {
+  margin-top: 0;
+}
+
+/* Form styling */
+form {
+  flex: 1; /* Allows the form to take up available space */
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 20px;
+  border: 2px solid #161442;
+  border-radius: 15px;
+  background-color: #fff;
+}
+
+/* Container for form and results */
+.form-results-container {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 15px; /* Gap between form and results */
+  margin-top: 20px; /* Adjust margin as needed */
+}
+
+form label {
+  font-weight: 600;
+}
+
+form input,
+form textarea {
+  width: auto;
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+form button {
+  padding: 10px 20px;
+  width: auto;
+  font-size: 1rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  color: white;
+  background-color: #161442; /* Default color */
+
+}
+
+form button#submitButton {
+  background-color: #161442; /* Primary button color */
+  margin-bottom : 10px;
+}
+
+form button#resetButton {
+  background-color: #161442; /* Secondary button color */
+}
+
+/* Results styling */
+#results {
+  display: none; /* Hidden by default */
+  flex: 1; /* Allows the results section to grow with the form */
+  padding: 20px;
+  border: 2px solid #161442;
+  border-radius: 15px;
+  background-color: #f9f9f9;
+}
+
+/* Footer styling */
+footer {
+  background-color: #161442;
+  color: white;
+  text-align: center;
+  padding: 10px 0;
+  position: relative;
+  width: 100%;
+  bottom: 0;
+}
+
+footer .social-icons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+footer .social-icons a {
+  color: white;
+  text-decoration: none;
+  font-size: 1.5rem;
+}
+
+footer .social-icons a:hover {
+  color: #ccc;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .navbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .navbar ul {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  footer {
+    font-size: 0.9rem;
+  }
+}
