@@ -19,31 +19,10 @@ const response = await fetch('http://127.0.0.1:8000/recommend', {
     body: JSON.stringify({ title, subjects, synopsis })
 });
 
-const data = await response.json(); 
-// console.log("publishers", JSON.stringify(data, null, 2))
+const data = await response.json();
 
-//data (dict obj) needed is here...sample
-//{
-//   "recommendations": [
-//     {
-//       "index": 5999,
-//       "publisher": "TokyoPop",
-//       "similarity_score": 0,
-//       "subjects": "Children's Books\nLiterature & Fiction\nComics & Graphic Novels\nManga",
-//       "title": "Pirates of the Caribbean: Dead Man's Chest Dead Man's Chest: Island of the Peleg"
-//     },
-//     {
-//       "index": 2002,
-//       "publisher": "University of Virginia Press",
-//       "similarity_score": 0,
-//       "subjects": "Literature & Fiction\nHistory & Criticism\nRegional & Cultural",
-//       "title": "The Purloined Islands: Caribbean-U.S. Crosscurrents in Literature and Culture, 1880?1959 (New World Studies)"
-//     },
-//}
-
-const publishers = data.recommendations.map(item => item.publisher)
-// console.log("publishers", publishers)
-
+const output = data.recommendations.map(item => item.output)
+console.log(output)
 if (response.ok) 
 {
     // Display results
@@ -60,20 +39,23 @@ if (response.ok)
     if (data.recommendations.length === 0) {
         resultsDiv.innerHTML = '<p>No recommendations found.</p>';
         return;
-      }
-  
+    }
       // Dynamically render recommendations
-      data.recommendations.forEach(item => {
+    data.recommendations.forEach(item => {
         const recommendationHTML = `
-          <div class="recommendation">
-            <p> ${item.publisher}</p>
-          </div>
+        <div class="recommendation">
+            <pre>
+            ${item.output}
+            </pre>
+        </div>
+        <footer></footer>
         `;
         resultsDiv.innerHTML += recommendationHTML;
-      });
-        
+    });
+
         // Show the results container
         resultsDiv.style.display = 'block';
+
 } else {
     console.error(data.error);
     alert('Error: ' + data.error);
@@ -92,7 +74,6 @@ document.getElementById('resetButton').addEventListener('click', () => {
     document.getElementById('title').value = '';
     document.getElementById('subjects').value = '';
     document.getElementById('synopsis').value = '';
-  
     // Clear and hide results
     const resultsDiv = document.getElementById('results');
     resultsDiv.innerHTML = '';
