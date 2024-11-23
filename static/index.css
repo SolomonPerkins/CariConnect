@@ -1,13 +1,15 @@
 /* General styles */
 body, html {
-  margin: 0;
+  margin:0;
   padding: 0;
   height: 100%;
   font-family: 'Montserrat', sans-serif;
   display: flex;
   flex-direction: column;
 }
-
+body > :not(.goog-te-banner-frame) {
+  z-index: 1;
+}
 /* Flex container for the page layout */
 .container {
     display: flex;
@@ -138,17 +140,6 @@ form button#resetButton {
   background-color: #161442; /* Secondary button color */
 }
 
-/* Language Selector Styling */
-.language-selector {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-}
-
-.language-selector select {
-    padding: 5px;
-    font-size: 1em;
-}
 
 /* Results styling */
 #results {
@@ -166,7 +157,9 @@ footer {
   color: white;
   text-align: center;
   padding: 10px 0;
-  position: relative;
+  position: fixed;
+  bottom: 0;
+  left: 0;
   width: 100%;
   margin-top: auto;
   flex-shrink: 0;
@@ -216,4 +209,16 @@ pre {
     max-width: 100%; /* Ensures the pre element does not exceed container's width */
     max-height: 100%;
     overflow: auto; /* Adds a scrollbar if content overflows */
+}
+
+#google_translate_element {
+  display: flex;
+  padding: 10px;
+  justify-content: left;
+}
+
+.goog-te-banner-frame {
+  position: fixed !important; /* Keep the banner fixed to the top */
+  top: 50px !important; /* Adjust to leave space below your header */
+  z-index: 9999 !important; /* Ensure it appears above most content */
 }

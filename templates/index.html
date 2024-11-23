@@ -9,6 +9,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+            pageLanguage: 'en', // Set your page's default language
+            includedLanguages: 'en,es,fr,de,it,nl,pap,ht', // List of languages for the dropdown
+            layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
 </head>
 
 <body>
@@ -22,23 +33,20 @@
         <li><a href="#landing-page">TRY IT OUT</a></li>
     </ul>
     </nav>
-
     <!-- Main content -->
     <div class="content">
-
     <!-- Who We Are Section -->
     <section id="who-we-are">
         <h2>CariConnect: Connecting authors with publishers</h2>
         <p>
         CariConnect is an artificial intelligence and machine learning based tool brought to you by CariCon. The goal of CariConnect is to provide Caribbean authors with a list of publishers, particularly those who have a history of publishing books like theirs. To get your recommendations, all you need to do is to enter your book's details: title, category or subjects, and blurb or synopsis. Our model then leverages machine learning models and algorithms to tap into our specialized dataset and contextualize your book in relation to the rest of the industry. The result is a list of five publishers, complete with a user-friendly explanation and reasoning why. Try it out!
         </p>
+        <br>
+        <img src="{{ url_for('static', filename='/icon2.png') }}" alt="Icon" class="icon">
     </section>
 
     <section id="landing-page">
         <header>
-            <img src="{{ url_for('static', filename='/icon.png') }}" alt="Icon" class="icon">
-            <br>
-            <br>
 
         <h1>RECOMMEND ME!</h1>
         <div class="form-results-container">
@@ -66,6 +74,7 @@
     </section>
     </div>
     <footer>
+        <div id="google_translate_element"></div>
     <p>© 2024 Copyrights. All rights reserved.</p>
     <div class="social-icons">
         <a href="https://x.com/CariConLA" target="_blank" title="Twitter">
@@ -77,6 +86,7 @@
         <i class="fab fa-instagram"></i>
         </a>
     </div>
+
     </footer>
     <!-- Reference JavaScript in the static folder -->
     <script src="{{ url_for('static', filename='script.js') }}"></script>
