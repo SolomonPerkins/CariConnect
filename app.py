@@ -327,7 +327,7 @@ def recommend():
             output = chat_completion.choices[0].message.content
 
             print(output)
-            output = GoogleTranslator(source='auto', target=lang_input).translate(output)
+            #output = GoogleTranslator(source='auto', target=lang_input).translate(output)
 
             print(output)
 

@@ -14,16 +14,10 @@ D
 vercel.json,8/3/83188a989cfa5952424962eec8f2d0f97ba87e09
 D
 templates/index.html,f/6/f69b8ce2e31684ae06f1b3e84821e07e3dfddb2f
-A
-requirements0.txt,a/6/a689d80a0a624a1c5ba68fb0bc017f276c8d54f4
 @
 static/index.css,5/8/584cd259ea69fe8603a408f9291aafc612469821
-B
-test/test_model.py,5/0/50f5a9c75ed7d89d6539716391f10dba9ebeb678
 @
 static/script.js,a/c/ac2842ee42a0472b40b15c0f3960ba0e5b87d9f6
-=
-test/train.py,0/f/0f9391e441d4c8553dabc0cc8a5a6592e514cd3c
 6
 app.py,1/3/13cce7fd076299c81b4986166f3d822791c9490e
 4
