@@ -27,6 +27,7 @@ if (response.ok)
 {
     // Display results
     const resultsDiv = document.getElementById('results');
+    resultsDiv.style.display = 'flex';
 
     //clear previous results
     // resultsDiv.innerHTML = ''
