@@ -203,3 +203,16 @@ pre {
     max-width: 100%; /* Ensures the pre element does not exceed container's width */
     overflow: auto; /* Adds a scrollbar if content overflows */
 }
+
+
+#google_translate_element {
+  display: flex;
+  padding: 10px;
+  justify-content: left;
+}
+
+.goog-te-banner-frame {
+  position: fixed !important; /* Keep the banner fixed to the top */
+  top: 50px !important; /* Adjust to leave space below your header */
+  z-index: 9999 !important; /* Ensure it appears above most content */
+}
