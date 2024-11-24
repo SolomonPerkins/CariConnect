@@ -13,6 +13,7 @@ body, html {
     display: flex;
     flex-direction: column;
     min-height: 100%; /* Ensure it takes up at least the full height of the screen */
+    flex-grow: 1; /* Allows content to fill available space */
 }
 
 /* Navbar styles */
@@ -61,12 +62,17 @@ body, html {
 
 /* Section styles */
 .content {
+  flex-grow: 1; /* Ensures content area expands to fill available space */
   margin-top: 70px; /* Adjust for navbar height */
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
+/* Landing page and "Who We Are" sections */
 #landing-page,
 #who-we-are {
-  height: 100vh; /* Full viewport height */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -98,10 +104,8 @@ form {
 /* Container for form and results */
 .form-results-container {
   display: flex;
-  justify-content: flex-start;
-  align-items: flex-start;
+  flex-direction: column;
   gap: 15px; /* Gap between form and results */
-  margin-top: 20px; /* Adjust margin as needed */
 }
 
 form label {
@@ -119,45 +123,28 @@ form textarea {
 
 form button {
   padding: 10px 20px;
-  width: auto;
   font-size: 1rem;
   border: none;
   border-radius: 5px;
   cursor: pointer;
   color: white;
-  background-color: #161442; /* Default color */
-
+  background-color: #161442;
 }
 
-form button#submitButton {
-  background-color: #161442; /* Primary button color */
-  margin-bottom : 10px;
-}
-
-form button#resetButton {
-  background-color: #161442; /* Secondary button color */
-}
-
-/* Language Selector Styling */
-.language-selector {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-}
-
-.language-selector select {
-    padding: 5px;
-    font-size: 1em;
+form button:hover {
+  background-color: #333;
 }
 
 /* Results styling */
 #results {
   display: none; /* Hidden by default */
-  flex: 1; /* Allows the results section to grow with the form */
+  flex-grow: 1; /* Allows the results section to grow with the form */
   padding: 20px;
   border: 2px solid #161442;
   border-radius: 15px;
   background-color: #f9f9f9;
+  overflow-y: auto; /* Ensures scrollbar if results exceed the container height */
+  max-height: 50vh; /* Ensures the results section doesn't take over the entire viewport */
 }
 
 /* Footer styling */
@@ -166,11 +153,9 @@ footer {
   color: white;
   text-align: center;
   padding: 10px 0;
-  position: relative;
-  width: 100%;
   margin-top: auto;
-  flex-shrink: 0;
-  overflow: visible;
+  flex-shrink: 0; /* Prevent footer from shrinking */
+  width: 100%;
 }
 
 footer .social-icons {
@@ -206,6 +191,8 @@ footer .social-icons a:hover {
     font-size: 0.9rem;
   }
 }
+
+/* Preformatted text styling */
 pre {
     background-color: #f4f4f4;
     padding: 10px;
@@ -214,6 +201,5 @@ pre {
     white-space: pre-wrap; /* Ensures long lines wrap */
     word-wrap: break-word; /* Prevents long words from overflowing */
     max-width: 100%; /* Ensures the pre element does not exceed container's width */
-    max-height: 100%;
     overflow: auto; /* Adds a scrollbar if content overflows */
 }
