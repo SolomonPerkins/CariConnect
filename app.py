@@ -8,6 +8,19 @@ import pickle
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 
+import re
+
+from sklearn.metrics.pairwise import cosine_similarity
+
+from sentence_transformers import SentenceTransformer
+
+from langchain.chains import RetrievalQA
+from langchain.prompts import PromptTemplate
+from langchain_community.llms import HuggingFaceHub
+from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import HuggingFaceEmbeddings
+
+
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
@@ -22,8 +35,6 @@ from langdetect import detect, DetectorFactory
 from langdetect.lang_detect_exception import LangDetectException
 from deep_translator import GoogleTranslator
 
-from sklearn.metrics.pairwise import cosine_similarity
-
 from groq import Groq
 
 load_dotenv()
@@ -33,45 +44,46 @@ CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins
 
 # Load models at startup
 try:
-    with open('models/tfidf_vectorizer.pkl', 'rb') as f:
-        models = {
-            'tfidf': pickle.load(f)
-        }
-    with open('models/maxabs_scaler.pkl', 'rb') as f:
-        models['scaler'] = pickle.load(f)
-    with open('models/svd_model.pkl', 'rb') as f:
-        models['svd'] = pickle.load(f)
-    with open('models/birch_model.pkl', 'rb') as f:
-        models['birch'] = pickle.load(f)
-    
+    with open('models/spectral_model.pkl', 'rb') as f:
+        spectral = pickle.load(f)
+
     # Load reduced data
-    match_data = pd.read_csv('data/df_matching.csv', index_col='Unnamed: 0')
-    reduced_data = pd.read_csv('data/df_reduced.csv', index_col = 'Unnamed: 0')
+    df_model = pd.read_csv('data/df_spec_modeling.csv')
+    weighted_embeddings = np.load('data/weighted_embeddings.npy')
+    similarity_matrix = np.load('data/similarity_matrix.npy')
     print("Models loaded successfully!")
 except Exception as e:
     print(f"Error loading models: {e}")
-    models = None
-    match_data = None
-    reduced_data = None
+    spectral = None
+    df_model = None
+    weighted_embeddings = None
+    similarity_matrix = None
+
+
+model = SentenceTransformer('all-MiniLM-L6-v2')  # paraphrase- ... perform less good
+llm = HuggingFaceHub(repo_id="microsoft/Phi-3-mini-4k-instruct", model_kwargs={"temperature": 0.6})
+
+embeddings = HuggingFaceEmbeddings(model_name='paraphrase-MiniLM-L6-v2')
+# embeddings = HuggingFaceEmbeddings(model_name='bert-base-uncased')
+docsearch = FAISS.load_local("data/faiss_index", embeddings, allow_dangerous_deserialization=True)
+
 
 stemmer = SnowballStemmer("english")
+
 def preprocess(s):
     s=str(s)
-    s = s.lower() # lowercase
+    s = s.lower() # lowercase !
     s = contractions.fix(s) # expand contractions
-    s = str.replace(r'\\n', ' ', s) # remove \n
-    s = str.replace(r'http\S+', '', s) # remove url
-    s = str.replace(r'<.*?>', '', s) # remove html
-    s = str.replace(r'\d+', '', s) # remove numbers
-    s = str.replace(r'[^\w\s]', ' ', s) # remove punctuation and special characters
+    s = re.sub(r'\n', ' ', s) # remove \n
+    s = re.sub(r'http\S+', '', s) # remove url
+    s = re.sub(r'<.*?>', '', s) # remove html
+    s = re.sub(r'\d+', '', s) # remove numbers
+    s = re.sub(r'\s+', ' ', s).strip()
+    s = re.sub(r'[^\w\s]', '', s) # remove punctuation and special characters
     s = word_tokenize(s) # tokenize
     s = [w for w in s if w not in set(stopwords.words('english'))] # stop words
     s = [stemmer.stem(w) for w in s] # stemming
     return " ".join(s) # white spaces
-def preprocess_transform(s):
-    preprocessed = preprocess(s)
-    transformed = models['tfidf'].transform([preprocessed]).toarray()
-    return transformed
 
 # Input language determinate
 DetectorFactory.seed = 0
@@ -95,125 +107,9 @@ def translate_to_english(text):
 
 detector = LanguageDetector()
 
-# Define translations for each language
-translations = {
-    'English': {
-        'title': 'Submit Book Details',
-        'book_name': 'Name of the Book',
-        'language': 'Language',
-        'category': 'Category',
-        'synopsis': 'Synopsis (Optional)',
-        'submit': 'Submit',
-        'feedback_title': 'Book Submission Result',
-        'name_label': 'Book Name:',
-        'language_label': 'Language:',
-        'category_label': 'Category:',
-        'synopsis_label': 'Synopsis:',
-        'publisher_label': 'Publisher:',
-        'probability_label': 'Probability of Accepting:',
-        'related_book_label': 'Related Book Published:',
-        'submit_button': 'Submit another book'
-    },
-    'Dutch': {
-        'title': 'Boekdetails indienen',
-        'book_name': 'Naam van het boek',
-        'language': 'Taal',
-        'category': 'Categorie',
-        'synopsis': 'Samenvatting (Optioneel)',
-        'submit': 'Verzenden',
-        'feedback_title': 'Resultaat van boekinzending',
-        'name_label': 'Boeknaam:',
-        'language_label': 'Taal:',
-        'category_label': 'Categorie:',
-        'synopsis_label': 'Samenvatting:',
-        'publisher_label': 'Uitgever:',
-        'probability_label': 'Aanvaardingskans:',
-        'related_book_label': 'Gerelateerd boek gepubliceerd:',
-        'submit_button': 'Nog een boek indienen'
-    },
-    'French': {
-        'title': 'Soumettre les détails du livre',
-        'book_name': 'Nom du livre',
-        'language': 'Langue',
-        'category': 'Catégorie',
-        'synopsis': 'Résumé (Facultatif)',
-        'submit': 'Soumettre',
-        'feedback_title': 'Résultat de la soumission du livre',
-        'name_label': 'Nom du livre:',
-        'language_label': 'Langue:',
-        'category_label': 'Catégorie:',
-        'synopsis_label': 'Résumé:',
-        'publisher_label': 'Éditeur:',
-        'probability_label': 'Probabilité d\'acceptation:',
-        'related_book_label': 'Livre publié similaire:',
-        'submit_button': 'Soumettre un autre livre'
-    },
-    'Haitian Creole': {
-        'title': 'Soumèt detay liv la',
-        'book_name': 'Non liv la',
-        'language': 'Lang',
-        'category': 'Kategori',
-        'synopsis': 'Rezime (Opsyonèl)',
-        'submit': 'Soumèt',
-        'feedback_title': 'Rezilta soumèt liv la',
-        'name_label': 'Non liv la:',
-        'language_label': 'Lang:',
-        'category_label': 'Kategori:',
-        'synopsis_label': 'Rezime:',
-        'publisher_label': 'Piblikatè:',
-        'probability_label': 'Pwobabilite Akseptasyon:',
-        'related_book_label': 'Liv ki gen rapò pibliye:',
-        'submit_button': 'Soumèt yon lòt liv'
-    },
-    'Papiamentu': {
-        'title': 'Entregá detaye di e buki',
-        'book_name': 'Nòm di e buki',
-        'language': 'Idioma',
-        'category': 'Kategoria',
-        'synopsis': 'Resumenchi (Opshonal)',
-        'submit': 'Entregá',
-        'feedback_title': 'Resultado di entrega di e buki',
-        'name_label': 'Nòm di e buki:',
-        'language_label': 'Idioma:',
-        'category_label': 'Kategoria:',
-        'synopsis_label': 'Resumenchi:',
-        'publisher_label': 'Editoria:',
-        'probability_label': 'Probabilidat di akseptashon:',
-        'related_book_label': 'Buki relashona publika:',
-        'submit_button': 'Entregá otro buki'
-    },
-    'Spanish': {
-        'title': 'Enviar detalles del libro',
-        'book_name': 'Nombre del libro',
-        'language': 'Idioma',
-        'category': 'Categoría',
-        'synopsis': 'Sinopsis (Opcional)',
-        'submit': 'Enviar',
-        'feedback_title': 'Resultado de la presentación del libro',
-        'name_label': 'Nombre del libro:',
-        'language_label': 'Idioma:',
-        'category_label': 'Categoría:',
-        'synopsis_label': 'Sinopsis:',
-        'publisher_label': 'Editorial:',
-        'probability_label': 'Probabilidad de aceptación:',
-        'related_book_label': 'Libro relacionado publicado:',
-        'submit_button': 'Enviar otro libro'
-    }
-}
-
-# column weights
-title_weight=.05
-subject_weight=.8
-synopsis_weight=.15
-
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
 @app.route('/recommend', methods=['GET', 'POST'])  # Allow both GET and POST
 def recommend():
-    # set language
-    selected_language = request.args.get('language', 'English')
-    language_content = translations.get(selected_language, translations['English'])
-    translation = translations[selected_language]
-
     if request.method == 'POST':
         try:
             # Print request details for debugging
@@ -229,106 +125,227 @@ def recommend():
             title_input = data.get('title', '')
             subject_input = data.get('subjects', '')
             synopsis_input = data.get('synopsis', '')
-            lang_input = data.get('language', '')  # Empty if not selected
-
             # Print input data for debugging
             print(f"Processing request for title: {title_input}")
-
+            title_input = preprocess(title_input)
+            synopsis_input = preprocess(synopsis_input)
             detector.set_text(synopsis_input)
-            detect_input = detector.detect_language()
             synopsis_input = translate_to_english(synopsis_input)
-            if not lang_input:
-                lang_input = detect_input
+            subj_prompt = f"Generate a brief list of subjects and categories based on this synopsis: {synopsis_input}. Follow the format structure: 1. Category: <category> 2. Category: <category> 3. Category <category> 4. EndOutput"
+            if subject_input == "":
+                subject_input = llm(subj_prompt)
+                subject_input = subject_input.split("EndOutput")[1]
+                subject_input = re.findall(r'Category: (.+)', subject_input)
+            subject_input = preprocess(subject_input)
+            subject_input = translate_to_english(subject_input)
 
-            clean_title_input = title_weight * preprocess_transform(title_input)
-            clean_subject_input = subject_weight * preprocess_transform(subject_input)
-            clean_synopsis_input = synopsis_weight * preprocess_transform(synopsis_input)
-            input_df = pd.DataFrame(
-                np.concatenate([clean_title_input, clean_subject_input, clean_synopsis_input], axis=1))
+            print(synopsis_input)
 
-            # scale input
-            input_df = models['scaler'].transform(input_df)
-            # reduce dimensions of input
-            red_input = models['svd'].transform(input_df)
+            # 1.Generate weighted embedding for new input
+            new_subject_embedding = model.encode(subject_input, batch_size=1)
+            new_synopsis_embedding = model.encode(synopsis_input, batch_size=1) if synopsis_input else np.zeros_like(
+                new_subject_embedding)
 
-            # predict test input
-            input_pred = models['birch'].predict(red_input)[0]
+            if new_synopsis_embedding.shape[0] == 0:
+                synopsis_weight = 1
+                subject_weight = 0
+            else:
+                subject_weight = 0.9
+                synopsis_weight = 0.1
 
-            # vector subset where label matches
-            subset = match_data[match_data['label'] == input_pred]
-            sim_subset = reduced_data.loc[subset.index]
+            new_weighted_embedding = (
+                    subject_weight * new_subject_embedding +
+                    synopsis_weight * new_synopsis_embedding
+            )
 
-            # calculate cosine similarity within that cluster
-            simscore = cosine_similarity
-            similarity = simscore(red_input, sim_subset).T  # input
+            # 2.Calculate cluster centroids from original similarity matrix
+            cluster_centroids = {}
+            for cluster_num in np.unique(df_model['cluster']):  # 'clusters' is the output of Spectral Clustering
+                cluster_indices = np.where(df_model['cluster'] == cluster_num)[0]
+                cluster_centroids[cluster_num] = np.mean(weighted_embeddings[cluster_indices], axis=0)
 
-            # append similarity to dataframe
-            subset['similarity'] = similarity
-            subset.loc[match_data['language'] == lang_input, 'similarity'] += 1  # prioritize same language
+            # 3.Compute similarity with new data point
+            similarities = {}
+            for cluster_num, centroid in cluster_centroids.items():
+                similarity = cosine_similarity(new_weighted_embedding.reshape(1, -1), centroid.reshape(1, -1))[0][0]
+                similarities[cluster_num] = similarity
 
-            # top 5 similar
-            top_subset = subset.sort_values(by='similarity', ascending=False).head(5)
-            top_index = top_subset.index
+            # 4.Assign to the most similar cluster
+            assigned_cluster = max(similarities, key=similarities.get)
 
-            # get information of top 5
+            print(f"Assigned Cluster: {assigned_cluster}")
+            print(f"Similarity Scores: {similarities}")
+
+            cluster_books_indices = df_model[df_model['cluster'] == assigned_cluster].index
+
+            similarity_scores = cosine_similarity(new_weighted_embedding.reshape(1, -1), weighted_embeddings[cluster_books_indices]).T
+
+            df_cluster = df_model[df_model['cluster'] == assigned_cluster]
+            df_cluster['similarity'] = similarity_scores
+            similar_books = df_cluster.sort_values(by='similarity', ascending=False, inplace=False)
+            top_books = similar_books.head(5) if len(similar_books) >= 5 else similar_books
+            top_books_details = df_model.loc[top_books.index]
+            top_cluster_index = top_books_details.index.tolist()
+            print(top_cluster_index)
+
+            retriever = docsearch.as_retriever()
+
+            # Define the prompt
+            prompt_template = """
+            Compare the book given in the question with others in the retriever. Focus primarily on genre (subject) as the main matching criterion, followed by details in the title and synopsis.
+
+            Return the top 5 most similar books. For each book, include:
+            - The original title.
+            - The reason for similarity (based on genre, title, and synopsis).
+            - The index or identifier of the book (if available).
+
+            question: {question}
+            context: {context}
+
+            Provide your response in this structured format:
+            1. Index: <index>, Title: <title>, Reason: <reason>
+            2. Index: <index>, Title: <title>, Reason: <reason>
+            3. Index: <index>, Title: <title>, Reason: <reason>
+            4. Index: <index>, Title: <title>, Reason: <reason>
+            5. Index: <index>, Title: <title>, Reason: <reason>
+            """
+
+            # Create the prompt object
+            prompt = PromptTemplate(template=prompt_template, input_variables=["context", "question"])
+
+            # Create the RetrievalQA object
+            qa = RetrievalQA.from_chain_type(
+                llm=llm,
+                chain_type="stuff",
+                retriever=retriever,
+                chain_type_kwargs={"prompt": prompt}
+            )
+
+            # Query
+            query = f"Find the top 5 books most similar to one with subject '{subject_input}', title '{title_input}', and synopsis '{synopsis_input}'. Focus on genre and subject as primary matching criteria."
+
+            # Run the QA and get results
+            results = qa.run({"query": query})
+            print(results)
+
+            titles = re.findall(r'title: (.+)', results)
+
+            # Step 2: Match extracted titles to the title column in df_model and get indices
+            matched_indices = []
+            for title in titles[:5]:  # Only process the first 5 titles
+                match = df_model[df_model["title"] == title]
+                if not match.empty:
+                    matched_indices.append(match.index[0])  # Get the corresponding index from df_model
+
+            # Step 3: Output the results
+            print("Extracted Titles:", titles[:5])
+            print("Corresponding Indices:", matched_indices)
+            top_RAG_index = matched_indices
+
+            top_index = top_cluster_index + top_RAG_index
+            top_index = list(set(top_index))
+
             top_titles = []
             top_subjects = []
             top_synopsis = []
             top_publishers = []
-            top_languages = []
 
             def book_info(index):
-                title = match_data.loc[index]['title']
-                subjects = match_data.loc[index]['subjects']
-                synopsis = match_data.loc[index]['synopsis']
-                publisher = match_data.loc[index]['publisher']
-                language = match_data.loc[index]['language']
-                return title, subjects, synopsis, publisher, language
+                title = df_model.loc[index]['title']
+                subjects = df_model.loc[index]['subjects']
+                synopsis = df_model.loc[index]['synopsis']
+                publisher = df_model.loc[index]['publisher']
+                return title, subjects, synopsis, publisher
 
             for i in range(len(top_index)):
                 top_titles.append(book_info(top_index[i])[0])
                 top_subjects.append(book_info(top_index[i])[1])
                 top_synopsis.append(book_info(top_index[i])[2])
                 top_publishers.append(book_info(top_index[i])[3])
-                top_languages.append(book_info(top_index[i])[4])
+                print(book_info(top_index[i])[0])  # titles
 
-            print('calculations complete')
+            # Commented out IPython magic to ensure Python compatibility.
+            # %env GROQ_API_KEY=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
+
+            user_content = f"""
+            Using the input book information as a reference, compare and rank the similarity of books to the reference. Use literary analysis to evaluate each book based on thematic alignment, such as central conflict, character focus, and setting, and stylistic features such as narrative tone and diction.
+
+            Provide a list of the respective publishers of the books in descending order of book similarity to the reference book with a 3-sentence justification of the book similarities and ranking, citing specific aspects of the book information and synopsis that supports your assessment.
+
+            Structure the response in a list, where each entry is formatted, with elaboration as necessary:
+                (Rank number). (Publisher)
+                Explanation: (Publisher) published (Title), a (Subject) book that is similar to your book because (Explanation, 3-sentence justification of the book similarities). Therefore, your book appeals to (Publisher)'s sector of the market.
+
+            Book Reference:
+            Title: {title_input}.
+            Subject: {subject_input}.
+            Synopsis: {synopsis_input}.
+            """
+
+            # Add dynamically the list of books
+            for i in range(len(top_titles)):
+                user_content += f"\n\nBook {chr(65 + i)}:\n"
+                user_content += f"Title: {top_titles[i]}\n"
+                user_content += f"Subject: {top_subjects[i]}\n"
+                user_content += f"Synopsis: {top_synopsis[i]}\n"
+                user_content += f"Publisher: {top_publishers[i]}"
+
+            print(user_content)  # For debugging or review
+
             client = Groq(
-                api_key=os.getenv("GROQ_API_KEY"),
+                api_key=os.environ.get("GROQ_API_KEY"),
             )
+
             chat_completion = client.chat.completions.create(
+                #
+                # Required parameters
+                #
                 messages=[
-                    # Set an optional system message.
+                    # Set an optional system message. This sets the behavior of the
+                    # assistant and can be used to provide specific instructions for
+                    # how it should behave throughout the conversation.
                     {
                         "role": "system",
-                        "content": "You are a knowledgable and straightforward assistant with experience in literature and literary analysis, and knowledge of the publishing industry. You are explaining to authors which books are most similar to theirs using criteria such as themes, plot, character, setting, and tone. Your responses are concise and academic, strictly providing lists and explanations. Structure the response in a list, where each entry is formatted, with elaboration as necessary. (Do not mention the books' alphabetical labels A B C D E) : \n (Rank number). (Publisher) \n Published in (Language)\n Explanation: (Publisher) published (Title), a (Subject) book that is similar to your book because (Explanation, 3 sentence justification of the book similarities). Therefore, your book appeals to (Publisher)'s sector of the market."
+                        "content": "You are a knowledgable and straightforward assistant with experience in literature and literary analysis, and knowledge of the publishing industry. You are explaining to authors which books are most similar to theirs using criteria such as themes, plot, character, setting, and tone. Your responses are concise and academic, strictly providing lists and explanations."
                     },
                     # Set a user message for the assistant to respond to.
                     {
                         "role": "user",
-                        "content": f"Using the input book information as a reference, compare and rank the similarity of books A, B, C, D, and E to the reference. Use literary analysis to evaluate each book based on thematic alignment, such as central conflict, character focus, and setting, and stylistic features such as narrative tone and diction. \n Provide a list of the respective publishers of the books in descending order of book similarity to the reference book with a 3 sentence justification of the book similarities and ranking, citing specific aspects of the book information and synopsis that supports your assessment. Structure the response in a list, where each entry is formatted, with elaboration as necessary. (Do not mention the books' alphabetical labels A B C D E) : \n (Rank number). (Publisher) \n Published in (Language)\n Explanation: (Publisher) published (Title), a (Subject) book that is similar to your book because (Explanation, 3 sentence justification of the book similarities). Therefore, your book appeals to (Publisher)'s sector of the market. \n \n Book Reference: \n Title: {title_input}. \n Subject: {subject_input} \n Synopsis: {synopsis_input} \n \n Book A: \n Title: {top_titles[0]} \n Subject: {top_subjects[0]} \n Synopsis: {top_synopsis[0]} \n Publisher: {top_publishers[0]} \n Language: {top_languages[0]} \n \n Book B: \n Title: {top_titles[1]} \n Subject: {top_subjects[1]} \n Synopsis: {top_synopsis[1]} \n Publisher: {top_publishers[1]} \n Language: {top_languages[1]} \n \n Book C: \n Title: {top_titles[2]} \n Subject: {top_subjects[2]} \n Synopsis: {top_synopsis[2]} \n Publisher: {top_publishers[2]} \n Language: {top_languages[2]} \n \n Book D: \n Title: {top_titles[3]} \n Subject: {top_subjects[3]} \n Synopsis: {top_synopsis[3]} \n Publisher: {top_publishers[3]} \n Language: {top_languages[3]} \n \n Book E: \n Title: {top_titles[4]} \n Subject: {top_subjects[4]} \n Synopsis: {top_synopsis[4]} \n Publisher: {top_publishers[4]} \n Language: {top_languages[4]}"
+                        "content": user_content
                     }
                 ],
+
                 # The language model which will generate the completion.
-                model="llama3-70b-8192",
+                model="llama3-70b-8192",  # "llama3-8b-8192", #llama3-70b-8192
+
+                #
+                # Optional parameters
+                #
+
                 # Controls randomness: lowering results in less random completions.
-                temperature=0.3,
-                # The maximum number of tokens to generate.
+                # As the temperature approaches zero, the model will become deterministic
+                # and repetitive.
+                temperature=0.5,
+
+                # The maximum number of tokens to generate. Requests can use up to
+                # 32,768 tokens shared between prompt and completion.
                 max_tokens=8000,
-                # Controls diversity via nucleus sampling
+
+                # Controls diversity via nucleus sampling: 0.5 means half of all
+                # likelihood-weighted options are considered.
                 top_p=1,
-                # A stop sequence is a predefined or user-specified text string
+
+                # A stop sequence is a predefined or user-specified text string that
+                # signals an AI to stop generating content, ensuring its responses
+                # remain focused and concise. Examples include punctuation marks and
+                # markers like "[end]".
                 stop=None,
+
                 # If set, partial message deltas will be sent.
                 stream=False,
             )
-
             # Print the completion returned by the LLM.
             output = chat_completion.choices[0].message.content
-
-            print(output)
-            #output = GoogleTranslator(source='auto', target=lang_input).translate(output)
-
             print(output)
 
             # Format results
@@ -342,17 +359,18 @@ def recommend():
             print(f'RESULTS: {results}')
 
             return jsonify(results)
-            
+
         except Exception as e:
             print(f"Error processing request: {e}")  # Debug print
             return jsonify({'error': str(e)}), 500
-    
+
     return jsonify({'error': 'Method not allowed'}), 405
 
 @app.route('/')
 def home():
     print("Book Recommendation API is running!")
     return render_template('index.html')
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000)

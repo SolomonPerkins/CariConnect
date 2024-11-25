@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script type="text/javascript">
         function googleTranslateElementInit() {
             new google.translate.TranslateElement({
@@ -72,6 +73,30 @@
                 <!-- Results -->
                 <div id="results" style="display: none;">
                     <p><strong>RECOMMENDATIONS</strong></p>
+                    <div>
+                        <button id="download-pdf">Save as PDF</button>
+                        <script>
+                            // Wait for the document to be fully loaded
+                            document.getElementById('download-pdf').addEventListener('click', function () {
+                                // Get the HTML content that you want to convert
+                                const content = document.getElementById('results');
+
+                                // Using jsPDF to generate the PDF
+                                const { jsPDF } = window.jspdf; // Accessing jsPDF from the global window object
+                                const doc = new jsPDF();
+
+                                // Using jsPDF's 'html' method to capture the HTML element
+                                doc.html(content, {
+                                    callback: function (doc) {
+                                        // Once the PDF is generated, you can download it
+                                        doc.save('cariconnect.pdf');
+                                    },
+                                    x: 10, // x-coordinate for the start of the content
+                                    y: 10, // y-coordinate for the start of the content
+                                });
+                            });
+                        </script>
+                    </div>
                 </div>
                 </div>
             </section>

@@ -22,3 +22,7 @@ D
 app.py,1/3/13cce7fd076299c81b4986166f3d822791c9490e
 4
 .env,3/c/3c84dcdc6bbe3d7817c49dcdc327b926fea1808a
+I
+data/df_spec_modeling.csv,9/a/9ab043e72a17e0fa764edc72aeb4c167cd416bcc
+=
+py/testing.py,0/f/0f4662609353e0dcd35cefcb6d64ebfd2300e8a2

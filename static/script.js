@@ -6,9 +6,12 @@ const subjects = document.getElementById('subjects').value;
 const synopsis = document.getElementById('synopsis').value;
 
 
-if(!title || !subjects || !synopsis){
+if(!title & !subjects & !synopsis){
     alert('Please provide valid input.')
     return;
+}
+else {
+    alert('Fetching results! Responses may take a minute to load.')
 }
 try {
 const response = await fetch('http://127.0.0.1:8000/recommend', {

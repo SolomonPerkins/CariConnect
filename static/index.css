@@ -8,6 +8,9 @@ body, html {
   flex-direction: column;
 }
 
+body > :not(.goog-te-banner-frame) {
+  z-index: 1;
+}
 /* Flex container for the page layout */
 .container {
     display: flex;
