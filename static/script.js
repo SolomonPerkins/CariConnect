@@ -6,10 +6,11 @@ const subjects = document.getElementById('subjects').value;
 const synopsis = document.getElementById('synopsis').value;
 
 
-if(!title & !subjects & !synopsis){
-    alert('Please provide valid input.')
+if (!subjects.trim() & !synopsis.trim()) {
+    alert('Please provide valid input.');
     return;
 }
+
 else {
     alert('Fetching results! Responses may take a minute to load.')
 }

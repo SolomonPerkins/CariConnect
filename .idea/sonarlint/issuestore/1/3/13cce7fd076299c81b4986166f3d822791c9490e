@@ -1,7 +1,8 @@
 
-=python:S125E"Remove this commented out code.(Ñ·ÿ£8Ùã¼¶2
-dpython:S5361O"@Replace this "re.sub()" call by a "str.replace()" function call.(¡ÚÃÃüÿÿÿÿ8Ùã¼¶2
-Wpython:S5857Q"8Replace this use of a reluctant quantifier with "[^>]*".(Íªñ¯8Úã¼¶2
-}python:S117õ"^Rename this local variable "top_RAG_index" to match the regular expression ^[_a-z][a-z0-9_]*$.(ø†õ8Úã¼¶2
-xpython:S3776r"TRefactor this function to reduce its Cognitive Complexity from 27 to the 15 allowed.(”Ïé£ûÿÿÿÿ8Úã¼¶2
-mpython:S6729¦"MUse "np.nonzero" when only the condition parameter is provided to "np.where".(Àï££8Úã¼¶2
+=python:S125C"Remove this commented out code.(Ñ·ÿ£8Á¢Ï¶2
+dpython:S5361M"@Replace this "re.sub()" call by a "str.replace()" function call.(¡ÚÃÃüÿÿÿÿ8ú¦É¶2
+Wpython:S5857O"8Replace this use of a reluctant quantifier with "[^>]*".(Íªñ¯8Ã¢Ï¶2
+}python:S117ô"^Rename this local variable "top_RAG_index" to match the regular expression ^[_a-z][a-z0-9_]*$.(ø†õ8¥©ÏÒ¶2
+xpython:S3776p"TRefactor this function to reduce its Cognitive Complexity from 28 to the 15 allowed.(”Ïé£ûÿÿÿÿ8Ä¢Ï¶2
+Cpython:S125„"Remove this commented out code.(Úë¨±øÿÿÿÿ8ÜÔ¤Ò¶2
+mpython:S6729¥"MUse "np.nonzero" when only the condition parameter is provided to "np.where".(Àï££8¦©ÏÒ¶2

@@ -1,14 +1,13 @@
+# import libraries
+
 from dotenv import load_dotenv
 import os
 
 import pandas as pd
 import numpy as np
-import pickle
 
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
-
-import re
 
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -20,7 +19,7 @@ from langchain_community.llms import HuggingFaceHub
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
-
+import re
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
@@ -39,37 +38,34 @@ from groq import Groq
 
 load_dotenv()
 
+# Flask app
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins
 
 # Load models at startup
 try:
-    with open('models/spectral_model.pkl', 'rb') as f:
-        spectral = pickle.load(f)
-
-    # Load reduced data
+    # Load data
     df_model = pd.read_csv('data/df_spec_modeling.csv')
     weighted_embeddings = np.load('data/weighted_embeddings.npy')
     similarity_matrix = np.load('data/similarity_matrix.npy')
     print("Models loaded successfully!")
 except Exception as e:
     print(f"Error loading models: {e}")
-    spectral = None
     df_model = None
     weighted_embeddings = None
     similarity_matrix = None
 
 
-model = SentenceTransformer('all-MiniLM-L6-v2')  # paraphrase- ... perform less good
+model = SentenceTransformer('all-MiniLM-L6-v2')
 llm = HuggingFaceHub(repo_id="microsoft/Phi-3-mini-4k-instruct", model_kwargs={"temperature": 0.6})
 
 embeddings = HuggingFaceEmbeddings(model_name='paraphrase-MiniLM-L6-v2')
-# embeddings = HuggingFaceEmbeddings(model_name='bert-base-uncased')
 docsearch = FAISS.load_local("data/faiss_index", embeddings, allow_dangerous_deserialization=True)
 
+# functions
 
+# preprocessing functions
 stemmer = SnowballStemmer("english")
-
 def preprocess(s):
     s=str(s)
     s = s.lower() # lowercase !
@@ -85,6 +81,7 @@ def preprocess(s):
     s = [stemmer.stem(w) for w in s] # stemming
     return " ".join(s) # white spaces
 
+# translation functions
 # Input language determinate
 DetectorFactory.seed = 0
 class LanguageDetector:
@@ -107,6 +104,8 @@ def translate_to_english(text):
 
 detector = LanguageDetector()
 
+
+# Flask app route
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
 @app.route('/recommend', methods=['GET', 'POST'])  # Allow both GET and POST
 def recommend():
@@ -127,32 +126,34 @@ def recommend():
             synopsis_input = data.get('synopsis', '')
             # Print input data for debugging
             print(f"Processing request for title: {title_input}")
-            title_input = preprocess(title_input)
-            synopsis_input = preprocess(synopsis_input)
-            detector.set_text(synopsis_input)
+            # translate input
+            detector.set_text(synopsis_input+subject_input)
             synopsis_input = translate_to_english(synopsis_input)
+            # fill missing subjects
             subj_prompt = f"Generate a brief list of subjects and categories based on this synopsis: {synopsis_input}. Follow the format structure: 1. Category: <category> 2. Category: <category> 3. Category <category> 4. EndOutput"
-            if subject_input == "":
+            if not subject_input.strip():
                 subject_input = llm(subj_prompt)
                 subject_input = subject_input.split("EndOutput")[1]
-                subject_input = re.findall(r'Category: (.+)', subject_input)
+                subject_input = " ".join(re.findall(r'Category: (.+)', subject_input))
+            else:
+                subject_input = translate_to_english(subject_input)
+            # clean and preprocess inputs
+            synopsis_input = preprocess(synopsis_input)
             subject_input = preprocess(subject_input)
-            subject_input = translate_to_english(subject_input)
+            # Print processed data for debugging
+            print(subject_input+synopsis_input)
 
-            print(synopsis_input)
-
-            # 1.Generate weighted embedding for new input
+            # 1.Generate weighted embedding for input
             new_subject_embedding = model.encode(subject_input, batch_size=1)
             new_synopsis_embedding = model.encode(synopsis_input, batch_size=1) if synopsis_input else np.zeros_like(
                 new_subject_embedding)
-
+            # weights
             if new_synopsis_embedding.shape[0] == 0:
                 synopsis_weight = 1
                 subject_weight = 0
             else:
                 subject_weight = 0.9
                 synopsis_weight = 0.1
-
             new_weighted_embedding = (
                     subject_weight * new_subject_embedding +
                     synopsis_weight * new_synopsis_embedding
@@ -172,22 +173,23 @@ def recommend():
 
             # 4.Assign to the most similar cluster
             assigned_cluster = max(similarities, key=similarities.get)
-
+            # Print match assignment
             print(f"Assigned Cluster: {assigned_cluster}")
             print(f"Similarity Scores: {similarities}")
 
+            # get indexes and similarities
             cluster_books_indices = df_model[df_model['cluster'] == assigned_cluster].index
-
             similarity_scores = cosine_similarity(new_weighted_embedding.reshape(1, -1), weighted_embeddings[cluster_books_indices]).T
-
             df_cluster = df_model[df_model['cluster'] == assigned_cluster]
             df_cluster['similarity'] = similarity_scores
+            # get top 5 cosine similar
             similar_books = df_cluster.sort_values(by='similarity', ascending=False, inplace=False)
             top_books = similar_books.head(5) if len(similar_books) >= 5 else similar_books
             top_books_details = df_model.loc[top_books.index]
             top_cluster_index = top_books_details.index.tolist()
             print(top_cluster_index)
 
+            # RAG with langchain to fetch more matches
             retriever = docsearch.as_retriever()
 
             # Define the prompt
@@ -228,6 +230,7 @@ def recommend():
             results = qa.run({"query": query})
             print(results)
 
+            # Get results information from LLM output
             titles = re.findall(r'title: (.+)', results)
 
             # Step 2: Match extracted titles to the title column in df_model and get indices
@@ -242,6 +245,7 @@ def recommend():
             print("Corresponding Indices:", matched_indices)
             top_RAG_index = matched_indices
 
+            # Combine cosine similar and RAG results, get info
             top_index = top_cluster_index + top_RAG_index
             top_index = list(set(top_index))
 
@@ -264,8 +268,7 @@ def recommend():
                 top_publishers.append(book_info(top_index[i])[3])
                 print(book_info(top_index[i])[0])  # titles
 
-            # Commented out IPython magic to ensure Python compatibility.
-            # %env GROQ_API_KEY=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
+            # Prompt LLAMA through GROQ to rerank combined cosine similar and rag results
 
             user_content = f"""
             Using the input book information as a reference, compare and rank the similarity of books to the reference. Use literary analysis to evaluate each book based on thematic alignment, such as central conflict, character focus, and setting, and stylistic features such as narrative tone and diction.
@@ -282,7 +285,7 @@ def recommend():
             Synopsis: {synopsis_input}.
             """
 
-            # Add dynamically the list of books
+            # Add dynamically the list of books to the prompt
             for i in range(len(top_titles)):
                 user_content += f"\n\nBook {chr(65 + i)}:\n"
                 user_content += f"Title: {top_titles[i]}\n"
@@ -357,7 +360,7 @@ def recommend():
                 ]
             }
             print(f'RESULTS: {results}')
-
+            # Return JSON results to website
             return jsonify(results)
 
         except Exception as e:
@@ -366,11 +369,11 @@ def recommend():
 
     return jsonify({'error': 'Method not allowed'}), 405
 
+# website running
 @app.route('/')
 def home():
     print("Book Recommendation API is running!")
     return render_template('index.html')
-
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000)
