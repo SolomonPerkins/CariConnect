@@ -1,7 +1,8 @@
-# CariCon: **CariConnect** <sub>with Break Through Tech LA and Caribbean Literary Conference (CARICON)</sub>
+# CariCon: **CariConnect**
+## with Break Through Tech LA and Caribbean Literary Conference (CARICON)
 Ranked recommendation system based on integrated clustering and LLM models. Matches upcoming authors with prospective publishers using input book information by gathering similar books from existing dataset through clustering and cosine similarity, while the LLM provides re-ranking and a generated explanation. <br />
 
-## Methodology:
+## Methods:
 We utilized text data in csv's, translating and preprocessing the text data so that it was cleaned. This included dropping independent and missing publishers. We then vectorized the test data using BERT word embedding through HuggingFace Transformers.
 The final model we selected was a Spectral clustering model from SciKit Learn. The number of clusters was selected based on highest silhouette score. We averaged around a number of clusters from 50 to 60, with a silhouette score from .45 to .50. Within the cluster, the cosine similarity of the datapoints with the input were calculated and ranked. We also integrated Retrieval Augmented Generation (RAG), where Langchain with an LLM was used to fetch additional matches. Both the clustering cosine similarity and RAG results were combined to be reranked by the LLAMA 3 70B LLM model, accessed through the Groq API.
 For the purpose of the web application, we integrated our final clustering results by appending cluster assignments to the data. The website recieves an input, and the application preproccesses the input and matches it into a cluster, to which RAG fetches additional matches and reranks the conbined results with an explanation.
@@ -18,5 +19,32 @@ Test inputs have been provided in test.csv. Testing can be done through the webs
 
 ## License
 
-## Credits and Acknowledgments
-Suggested Content: List of team members, advisors, supporters; also libraries or third-party services used in the project.
+## Acknowledgments
+Team:
+TA:
+Advisors:
+
+APIs: HuggingFace, Groq
+Libaries:
+contractions==0.1.73
+deep-translator==1.11.4
+Flask==2.3.2
+Flask-Cors==5.0.0
+groq==0.12.0
+langdetect==1.0.9
+nltk==3.8.1
+deep-translator==1.11.4
+langdetect==1.0.9
+numpy==1.26.4
+pandas==2.2.3
+python-dotenv
+scikit-learn==1.5.2
+chromadb==0.5.20
+langchain==0.3.8
+langchain_community==0.3.8
+tiktoken==0.8.0
+sentence_transformers==3.3.1
+faiss-cpu==1.7.4
+fpdf==1.7.2
+werkzeug==2.3.3
+matplotlib
