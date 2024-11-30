@@ -12,8 +12,8 @@ For the purpose of the web application, we integrated our final clustering resul
 
 ## Installation User Guide
 APIs inclusde Groq and HuggingFace. The user must generate their own API keys and add them to a .env file. The API documentations are listed below.<br />
-[HuggingFace](https://huggingface.co/docs/hub/en/security-tokens)
-[Groq](https://console.groq.com/keys)
+[HuggingFace](https://huggingface.co/docs/hub/en/security-tokens)<br />
+[Groq](https://console.groq.com/keys)<br />
 HuggingFace provides access to LLMs and BERT transformers. Groq provides access to the LLAMA LLM, though LLAMA may be run locally instead.<br />
 The requirements are provided in the requirements.txt file. These requirements can be installed in the command line using the command pip install -r requirements.txt<br />
 The website uses Flask. To run the website, the Flask address may need be be adjusted. The port used is port 8000.<br />
@@ -23,7 +23,7 @@ Test inputs have been provided in test.csv. Testing can be done through the webs
 
 ## Acknowledgments
 Team: Ashley Camacho-Medellin, Khant Nyi Hlaing, [Kaylin (Kienn) Nguyen](https://github.com/kn21), Eileen (Yiming) Xue, Grace (Yunjin) Zhu <br />
-TAs: Arjun Aggarwal, Rebecca Aurelia Dsouza, <br />
+TAs: Arjun Aggarwal, Rebecca Aurelia Dsouza <br />
 Advisors: V. Steve Russell, Solomon Perkins<br />
 
 APIs: HuggingFace, Groq<br />
@@ -46,4 +46,4 @@ langchain,
 langchain_community,
 sentence_transformers,
 tiktoken,
-werkzeug,
+werkzeug
